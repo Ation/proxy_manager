@@ -16,5 +16,5 @@ class ProxyManager:
 
     def update_proxy_list(self):
         for provider in self._proxy_providers:
-            self._proxy_list.etend( provider.get_proxy_list() )
+            self._proxy_list.extend( provider.get_proxy_list() )
 
