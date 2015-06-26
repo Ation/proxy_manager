@@ -7,7 +7,7 @@ def main():
 
     proxy_manager.add_proxy_provider(hma_provider)
 
-    proxy_manager.update_proxy_list()
+    proxy_manager.update_proxy_list('HTTPS')
 
     while True:
         proxy = proxy_manager.get_proxy()

@@ -39,7 +39,7 @@ class ProxyProvider:
             }
         self._session = requests.Session()
 
-    def get_proxy_list(self):
+    def get_proxy_list(self, proxy_type):
         pages_count = self._get_pages_count()
 
         proxy_list = []
@@ -49,7 +49,9 @@ class ProxyProvider:
             entries = self._extract_entries(page_html)
 
             for entry in entries:
-                proxy_list.append( self._extract_proxy(entry) )
+                proxy = self._extract_proxy(entry)
+                if proxy_type != None and proxy.get_type() == proxy_type:
+                    proxy_list.append( self._extract_proxy(entry) )
 
         return proxy_list
 
