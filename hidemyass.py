@@ -86,6 +86,7 @@ class ProxyProvider:
 
     def _extract_proxy(self, xml_element):
         ip = self._extract_ip(xml_element)
+
         port = xml_element[2].text
         connection_type = xml_element[6].text
 
@@ -96,7 +97,7 @@ class ProxyProvider:
 
     def _extract_ip(self, xml_element):
         ip_element = xml_element[1][0]
-        ip = []
+        ip = ''
 
         required = '{display:inline}'
         stylestring = ip_element.find('style').text
@@ -105,23 +106,17 @@ class ProxyProvider:
 
         for el in ip_element:
             if el.tag == 'span':
-                if el.text != '.':
-                    el_class = el.get('class')
-                    if el_class and (el_class in styles or is_number(el_class)):
-                        ip.append(el.text)
-                    else:
-                        style = el.get('style')
-                        if style and 'inline' in style:
-                            ip.append(el.text)
+                el_class = el.get('class')
+                if el_class and (el_class in styles or is_number(el_class)):
+                    ip+=el.text
+                else:
+                    style = el.get('style')
+                    if style and 'inline' in style:
+                        ip+=el.text
             if el.tail and len(el.tail) != 0:
-                data = el.tail.replace('.', '')
-                if len(data) != 0:
-                    ip.append(data)
+                ip+=el.tail
 
-        if len(ip) == 4:
-            return '.'.join(ip)
-
-        return "Invalid"
+        return ip
 
     def _extract_width(self, xml_element):
         style = xml_element[0][0].get('style')
