@@ -50,7 +50,7 @@ class ProxyProvider:
 
             for entry in entries:
                 proxy = self._extract_proxy(entry)
-                if proxy_type != None and proxy.get_type() == proxy_type:
+                if proxy_type == None or proxy.get_type() == proxy_type:
                     proxy_list.append( self._extract_proxy(entry) )
 
         return proxy_list
