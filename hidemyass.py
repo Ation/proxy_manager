@@ -89,7 +89,7 @@ class ProxyProvider:
     def _extract_proxy(self, xml_element):
         ip = self._extract_ip(xml_element)
 
-        port = xml_element[2].text
+        port = xml_element[2].text.strip()
         connection_type = xml_element[6].text
 
         speed = self._extract_width(xml_element[4])
@@ -118,7 +118,7 @@ class ProxyProvider:
             if el.tail and len(el.tail) != 0:
                 ip+=el.tail
 
-        return ip
+        return ip.strip()
 
     def _extract_width(self, xml_element):
         style = xml_element[0][0].get('style')

@@ -1,7 +1,7 @@
 import proxymanager
 import hidemyass
 import fpl
-
+import sys
 import requests
 
 def test_proxy(proxy):
@@ -14,16 +14,20 @@ def test_proxy(proxy):
 
 def test_http(proxy):
     attempts = 0
+    proxy_string = 'http://'+proxy.get_ip()+':'+proxy.get_port()
+
+    print('HTTP test for \'{}\''.format(proxy_string))
     while attempts < 3:
         s = requests.Session()
         url = 'http://ya.ru'
-        s.proxies = { 'http': 'http://'+proxy.get_ip()+':'+proxy.get_port() }
+        s.proxies = { 'http': proxy_string }
 
         try:
-            r = s.get(url, timeout = 1)
+            r = s.get(url, timeout = 10)
             if r.status_code == 200:
                 return True
         except:
+            print('Exception on GET request: ', sys.exc_info()[0])
             pass
 
         attempts += 1
@@ -32,16 +36,19 @@ def test_http(proxy):
 
 def test_https(proxy):
     attempts = 0
+    proxy_string = 'https://'+proxy.get_ip()+':'+proxy.get_port()
+    print('HTTPS test for \'{}\''.format(proxy_string))
     while attempts < 3:
         s = requests.Session()
         url = 'https://ya.ru'
-        s.proxies = { 'https': 'https://'+proxy.get_ip()+':'+proxy.get_port() }
+        s.proxies = { 'https': proxy_string }
 
         try:
-            r = s.get(url, timeout = 1)
+            r = s.get(url, timeout = 10)
             if r.status_code == 200:
                 return True
         except:
+            print('Exception on GET request: ', sys.exc_info()[0])
             pass
 
         attempts += 1
@@ -111,11 +118,12 @@ class ProviderTest:
 
 
 def main():
-    tests =  [  ProviderTest('HideMyAss', hidemyass.ProxyProvider()),
-                ProviderTest('FPL', fpl.FPLProxyProvider()),
-                ProviderTest('SSL', fpl.SSLProxyProvider()),
-                ProviderTest('US', fpl.USProxyProvider()),
-                ProviderTest('UK', fpl.UKProxyProvider()) ]
+    tests = [  ProviderTest('HideMyAss', hidemyass.ProxyProvider()),
+                # ProviderTest('FPL', fpl.FPLProxyProvider()),
+                # ProviderTest('SSL', fpl.SSLProxyProvider()),
+                # ProviderTest('US', fpl.USProxyProvider()),
+                # ProviderTest('UK', fpl.UKProxyProvider())
+            ]
 
     for t in tests:
         t.run_test()
