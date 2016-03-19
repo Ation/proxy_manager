@@ -49,7 +49,7 @@ class AsyncProxyManager:
         max_timeout = 10
         while attempts < max_attempts:
             proxy_string = 'http://' + proxy.get_ip() + ':' + proxy.get_port()
-            print('Testing proxy: ' + proxy_string)
+            # print('Testing proxy: ' + proxy_string)
 
             with aiohttp.Timeout( max_timeout ):
                 connector = aiohttp.ProxyConnector(
@@ -62,10 +62,10 @@ class AsyncProxyManager:
                                 print('Adding proxy: ' + proxy_string)
                                 return True
                     except TypeError as te:
-                        print('Type error : ', te)
+                        # print('Type error : ', te)
                         pass
                     except:
-                        print('Exception on GET request: ', sys.exc_info()[0])
+                        # print('Exception on GET request: ', sys.exc_info()[0])
                         pass
 
             attempts += 1
@@ -85,13 +85,15 @@ class AsyncProxyManager:
 
         # check new proxy list and add valid proxy
         pending = set()
-        max_pending = 10
+        max_pending = 50
+
+        timeout_streak = 0
+        # number of waiting time exceeding limit in a row to increase max pending count
+        max_timeout_streak = 3
         # max interval in seconds
         max_wait_time = 0.1
         for index, proxy_to_test in enumerate(new_proxy_list):
             pending.add( asyncio.ensure_future( self.check_proxy(proxy_to_test), loop = self._event_loop))
-
-            print('Pending tasks: ' + str(len(pending)))
 
             if index != ( len(new_proxy_list) - 1) and len(pending) < max_pending:
                 continue
@@ -101,13 +103,18 @@ class AsyncProxyManager:
             end_time = time.time()
 
             wait_time = end_time - start_time
-            print('Wait time : ' + str(wait_time))
             if wait_time > max_wait_time:
-                max_pending = max_pending + 1
-                print('Increasing max_pending to: ' + str(max_pending))
+                timeout_streak += 1
+                if timeout_streak > max_timeout_streak:
+                    max_pending = max_pending + 1
+                    print('Increasing max_pending to: ' + str(max_pending))
+            else:
+                timeout_streak = 0
 
         if len(pending) != 0:
             print('Waiting for rest pending proxy to test')
             done, pending = await asyncio.wait(pending, loop = self._event_loop, return_when = asyncio.ALL_COMPLETED)
+            if len(pending) != 0:
+                print('That is weird. There is still something left')
 
         print('Proxy list update completed. Added: ' + str(self._proxy_list.qsize()))
