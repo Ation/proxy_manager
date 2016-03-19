@@ -2,6 +2,8 @@ import asyncio
 import aiohttp
 import time
 
+import sys
+
 class AsyncProxyManager:
     def __init__(self, proxy_type, auto_update = True, event_loop = None):
         self._proxy_type = proxy_type.lower()
@@ -46,23 +48,25 @@ class AsyncProxyManager:
         max_attempts = 3
         max_timeout = 10
         while attempts < max_attempts:
-            proxy_string = proxy.get_ip() + ':' + proxy.get_port()
+            proxy_string = 'http://' + proxy.get_ip() + ':' + proxy.get_port()
             print('Testing proxy: ' + proxy_string)
 
-            connector = aiohttp.ProxyConnector(
-                proxy = proxy_string)
-            session = aiohttp.ClientSession(connector=conn)
-
-            try:
-                response = await session.get(self._testing_url, timeout = max_timeout)
-
-                if response.status == 200:
-                    await self._proxy_list.put( proxy )
-                    print('Adding proxy: ' + proxy_string)
-                    return True
-            except:
-                print('Exception on GET request')
-                pass
+            with aiohttp.Timeout( max_timeout ):
+                connector = aiohttp.ProxyConnector(
+                    proxy = proxy_string)
+                with aiohttp.ClientSession(connector=connector) as session:
+                    try:
+                        async with session.get(self._testing_url) as response:
+                            if response.status == 200:
+                                await self._proxy_list.put( proxy )
+                                print('Adding proxy: ' + proxy_string)
+                                return True
+                    except TypeError as te:
+                        print('Type error : ', te)
+                        pass
+                    except:
+                        print('Exception on GET request: ', sys.exc_info()[0])
+                        pass
 
             attempts += 1
         print('Proxy is down : ' + proxy_string)
@@ -74,7 +78,7 @@ class AsyncProxyManager:
         print('Start updating proxy list')
 
         for pp in self._proxy_providers:
-            new_proxy_list.extend(pp.get_proxy_list())
+            new_proxy_list.extend(pp.get_proxy_list(None))
 
         print('Start checking proxy list : ' + str(len(new_proxy_list)))
         print('Testing url               : ' + self._testing_url)
@@ -85,7 +89,7 @@ class AsyncProxyManager:
         # max interval in seconds
         max_wait_time = 0.1
         for index, proxy_to_test in enumerate(new_proxy_list):
-            pending.add( asyncio.ensure_future( self.check_proxy(proxy_to_test) ), loop = self._event_loop )
+            pending.add( asyncio.ensure_future( self.check_proxy(proxy_to_test), loop = self._event_loop))
 
             print('Pending tasks: ' + str(len(pending)))
 
@@ -93,7 +97,7 @@ class AsyncProxyManager:
                 continue
 
             start_time = time.time()
-            done, pending = await asyncio.wait(pending, loop = self._event_loop, return_when = FIRST_COMPLETED)
+            done, pending = await asyncio.wait(pending, loop = self._event_loop, return_when = asyncio.FIRST_COMPLETED)
             end_time = time.time()
 
             wait_time = end_time - start_time
@@ -102,6 +106,8 @@ class AsyncProxyManager:
                 max_pending = max_pending + 1
                 print('Increasing max_pending to: ' + str(max_pending))
 
-        print('Waiting for rest pending proxy to test')
-        done, pending = await asyncio.wait(pending, loop = self._event_loop, return_when = ALL_COMPLETED)
-        print('Proxy list update completed. Added: ' + str(len(self._proxy_list)))
+        if len(pending) != 0:
+            print('Waiting for rest pending proxy to test')
+            done, pending = await asyncio.wait(pending, loop = self._event_loop, return_when = asyncio.ALL_COMPLETED)
+
+        print('Proxy list update completed. Added: ' + str(self._proxy_list.qsize()))

@@ -89,13 +89,13 @@ def test_http():
 
 def test_proxy():
     loop = asyncio.get_event_loop()
-    pm = asyncproxymanager.AsyncProxyManager('https', auto_update = False, event_loop = loop)
+    pm = asyncproxymanager.AsyncProxyManager('http', auto_update = False, event_loop = loop)
 
-    pm.add_provider(hidemyass.ProxyProvider())
-    # pm.add_provider(fpl.FPLProxyProvider())
-    # pm.add_provider(fpl.SSLProxyProvider())
-    # pm.add_provider(fpl.USProxyProvider())
-    # pm.add_provider(fpl.UKProxyProvider())
+    # pm.add_provider(hidemyass.ProxyProvider())
+    pm.add_provider(fpl.FPLProxyProvider())
+    pm.add_provider(fpl.SSLProxyProvider())
+    pm.add_provider(fpl.USProxyProvider())
+    pm.add_provider(fpl.UKProxyProvider())
 
     loop.run_until_complete(pm.update_proxy_list())
     loop.close()
